@@ -327,7 +327,7 @@ const dmMachine = setup({
               That is represented by confirming that the name matches with the randomName generated ✅ */
 
               {
-                guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) === randomName && utteranceMatch(feedback["clarification-request"]["spelling-offer"], event.value[0].utterance) && (checkScore(event.value[0].confidence) === "VERYGOOD" || checkScore(event.value[0].confidence) === "GOOD" || checkScore(event.value[0].confidence) === "OK"  ),
+                guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) === randomName && utteranceMatch(feedback["clarification-request"]["spelling-offer"], event.value[0].utterance) && (checkScore(event.value[0].confidence) === "VERYGOOD" || checkScore(event.value[0].confidence) === "GOOD" || checkScore(event.value[0].confidence) === "OK" ),
                 actions: assign({
                   spellreaction: "No, that's perfectly fine",
                   propername: ({ event }) => reProperName.exec(event.value[0].utterance)[0].substring(1)
@@ -357,7 +357,7 @@ const dmMachine = setup({
               */
 
               {
-                guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) !== randomName && utteranceMatch(feedback["npc-clarification-request"]["spelling-offer"], event.value[0].utterance),
+                guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) !== randomName && utteranceMatch(feedback["clarification-request"]["spelling-offer"], event.value[0].utterance),
                 actions: assign({
                   spellreaction: "Okay",
                   propername: ({ event }) => reProperName.exec(event.value[0].utterance)[0].substring(1),
