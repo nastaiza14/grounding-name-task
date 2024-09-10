@@ -1,0 +1,88 @@
+{
+    "title": "NPCwithNLU",
+
+    "information": {
+        "mansion": {
+            "mom-room": [
+                "The late mistress' room is properly locked, young miss"
+            ],
+            "child-room": [
+                "Your pet rabbit shall not be kept so long in your room, young miss"
+            ] ,
+            "library": [
+                "If the young miss could not sleep, I would suggest reading one of the stories in the big shelf in the library"
+            ],
+            "doll-room": [
+                "The cabinet in the doll-room belonged to the late mistress"
+            ]
+        },
+        "background-story":{
+            "parents-story": [
+                "As you might be aware, your father is very busy tending to his patients",
+                "The Sir's industriousness is commendable, he rests only past midnight and raises early to continue his work",
+                "The Sir shall not be disturbed while at work at the basement",
+                "The Sir has been enthralled with his work not long after the days the late mistress singed around the house were gone",
+                "The late mistress appeared to maintain deep affection for the Sir long before they settled in this mansion, but those matters are of no concern to a mere housekeeper"
+            ],
+            "housekeeper-story": [
+                "Thirteen years have passed from the Sir and late mistress' arrival to this mansion, and so are the years I have spent as the housekeeper",
+                "As the Sir is aware, this mansion is the second I have served in",
+                "I am of one and seventy years of age",
+                "Prior to my arrival to this household, I was a keeper to a lord's mansion not far away form this land",
+                "I do not have any children of my own"
+            ]
+        }
+    }
+    ,
+
+    "chit-chat": {
+        "weather": [
+            "Rain does not cease",
+            "I do not have any recollection of such heavy rain during my years in this household",
+            "If it does not cease raining the garden shall be completely spoiled"
+        ],
+        "life-philosophy": [
+            "The years I have spent in this household have taught me lessons I could not have learned anywhere else",
+            "Life is sustained through arduous endeavor",
+            "Pursuing fleeting pleasures is sure to be the ruin of men",
+            "Conversing with the Sir I have acquired ideas of foreign origin",
+            "Eternity might become, shall the Lord permit it, tangible to man as times progress"
+        ],
+        "work": [
+            "I'm afraid the household has come to a lamentable state, as the Sir is solely preoccupied with his work",
+            "Myself and the other two servants are not enough for the optimal maintenance of this household",
+            ""
+            
+        ],
+        "family": [
+            "The Sir does not plan on getting a tutor from the city, the young miss' education shall continue on hold"
+            
+        ],
+        "specifics": [
+            "Many of the wood has been spoilt due to the heavy rain and partial flooding of the back garden"
+            
+        ]
+    }
+    ,
+
+    "goal" : {
+        "basement" : [
+            "The basement is off-limits",
+            "You cannot go to the basement",
+            "The Sir has forbidden anyone from entering the basement",
+            "No servant is allowed to enter the basement, and the young miss is forbidden from entering as well",
+            "I cannot disobey the Sir's orders"
+        ],
+        "under-bed": [
+            "I believe the young miss must be mistaken",
+            "I do not know whatever the young miss is referring to",
+            "I am afraid I do not comprehend why you should mention such a thing",
+            "Is there anything you want imply?",
+            "There are no such pictures under my bed",
+            "You should not be snooping in anyone's personal belongings"
+        ]
+    
+    }
+}
+
+ 

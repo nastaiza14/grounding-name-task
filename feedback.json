@@ -1,0 +1,63 @@
+{
+
+    "positive" :{
+        "contact": ["uh"],
+        "understanding": ["um", "hm"],
+        "acceptance": ["right", "yes", "of course", "for sure", "absolutely", "surely"],
+        "confirmation": ["right?", "no?", "yes?"],
+        "verb-understanding": ["What would you like me to " ],
+        "negation": ["no", "nope", "that's not right", "that's not it", "that's not"]
+
+    },
+
+    "negative": {
+        "partial": ["You mean ", "Are you referring to ", "By that you mean ", "Do you mean "],
+        "no-understanding": ["I beg your pardon", "pardon?", "what are you speaking about again?"],
+        "noun-understanding": ["What is that [X] you are referring to?", "Are you refering to [X]?"]
+    },
+
+    "contradiction": ["but", "however"],
+
+    "acknowledgment": ["yeah", "right", "yes", "uh huh", "hmm"],
+
+    "rejection": ["no", "nope", "that's not right", "that's not it"],
+
+    "cancel": ["nevermind", "forget it", "forget about this"], 
+
+    "clarification-request": {
+
+        "repeat-request": ["Can you repeat that, please?", "Can you repeat?", "Come again?", "Can you repeat that for me, please?"],
+
+        "confirmation-request": ["yeah?", "right?", "yes?", "no?"],
+
+        "general-request": ["What?", "Sorry, I didn't hear that", "I couldn't hear that", "Sorry what was that?", "What did you say again?", "What did you say?"],
+
+        "spelling-request": ["Can you spell that for me, please?", "Can you spell that?", "Spell that, please", "Can you spell it?", "Spell it"],
+
+        "spelling-offer": ["Should I spell that for you?", "Do you want me to spell that?", "Do you want me to spell that for you?", "Should I spell it?", "Do you want me to spell it?", "Do you need me to spell it?", "Do you need me to spell that?"]
+
+    },
+
+    "npc-clarification-request": {
+
+        "feedback" : ["hmm...", "Wel...", "Uh..."],
+
+        "acknowledgment": ["Yes", "Certainly", "Sure", "Of course", "Right", "Indeed"],
+
+        "repeat-request": ["Could you repeat that again for me Young Miss?", "Could you repeat Miss?", "Come again Young Miss?", "Could you repeat that for me, please?", "Could you say that one more time Miss?"],
+
+        "confirmation-request": ["yes?", "right?", "no?", "is that so?"],
+
+        "general-request": ["What was that Miss?", "I couldn't hear that, Child", "I couldn't hear that Young Miss", "Sorry what was that Miss?", "What did you say again Miss?", "What did you say, Child?"],
+
+        "spelling-request": ["Could you tell me how you write that Miss?", "The name is composed by which letters?", "Out of curiosity, how do you spell that Young Miss?", "Could you say that letter by letter?", "I am curious, how do you write that Young Miss?"],
+
+        "general-request-2": ["Excuse me?", "What was that, Miss?", "What was that, child?", "I beg your pardon?"]
+
+    }
+
+    
+
+
+    
+}
