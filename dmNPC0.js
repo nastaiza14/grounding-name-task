@@ -493,7 +493,7 @@ const dmMachine = setup({
               Determining if the name matches also happens in State7. */
 
               {
-                guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) !== randomName && reSpell.exec(event.value[0].utterance),
+                guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reSpell.exec(event.value[0].utterance),
                 actions: assign({
                   spelling: ({ event }) => reSpell.exec(event.value[0].utterance),
                   propername: ({ event }) => reProperName.exec(event.value[0].utterance)[0].substring(1)
@@ -505,20 +505,11 @@ const dmMachine = setup({
               Only detecting spelling. */
 
               {
-                guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) !== randomName && reSpell.exec(event.value[0].utterance),
+                guard: ({ event }) => reSpell.exec(event.value[0].utterance),
                 actions: assign({
                   spelling: ({ event }) => reSpell.exec(event.value[0].utterance),
                 }),
                 target: "State7"
-              },
-
-              
-              //Let see about this again:
-              
-              { // clarification request about a name
-                guard: ({ event }) => reProperName.exec(event.value[0].utterance),
-                target: "UnknownPerson",
-                actions: ({ event }) =>  console.log(reProperName.exec(event.value[0].utterance),)
               },
 
               // perception level error
@@ -777,7 +768,7 @@ const dmMachine = setup({
               /* Waiting for spelling to move to State7 and update context.spelling. */
 
               {
-                guard: ({ event }) => reProperName.exec(event.value[0].utterance),
+                guard: ({ event }) => reSpell.exec(event.value[0].utterance),
                 actions: assign({
                   spelling: ({ event }) => reSpell.exec(event.value[0].utterance),
                 }),
@@ -855,7 +846,7 @@ const dmMachine = setup({
               Name doesn't match, but the confidence is very good. Grounded but incorrect. ✦ Explain logic for this ✦ */
 
               {
-                guard: ({ event, context }) => spellingMatch(reSpell.exec(event.value[0].utterance), randomName) !== randomName && (checkScore(event.value[0].confidence) === "VERYGOOD" || checkScore(event.value[0].confidence) === "GOOD"),
+                guard: ({ event, context }) => spellingMatch(reSpell.exec(event.value[0].utterance), randomName) !== randomName && (checkScore(event.value[0].confidence) === "VERYGOOD" || checkScore(event.value[0].confidence) === "GOOD" || checkScore(event.value[0].confidence) === "OK"),
                 actions: assign({
                   spelling: ({ event }) => reSpell.exec(event.value[0].utterance),
                   //reaction: randomRepeat(feedback["clarification-request"]["repeat-request"]),
@@ -863,10 +854,21 @@ const dmMachine = setup({
                 target: "UnknownPerson"
               },
 
+              /* Name does not match and the confidence is low, an opportunity to repair is given in State 8. */
+
+              {
+                guard: ({ event, context }) => spellingMatch(reSpell.exec(event.value[0].utterance), randomName) !== randomName && checkScore(event.value[0].confidence) === "LOW",
+                actions: assign({
+                  spelling: ({ event }) => reSpell.exec(event.value[0].utterance),
+                  reaction: ({ event }) => reSpell.exec(event.value[0].utterance) + "?",
+                }),
+                target: "State8"
+              },
+
               /* Name detected, no spelling, uttered as confirmation. */
 
               {
-                // If a proper name is detected, but no spelling, to State 5
+                // If a proper name is detected, but not spelling, to State 5 to ask for spelling
                 guard: ({ event }) => reProperName.exec(event.value[0].utterance),
                 actions: assign({
                   propername: ({ event }) => reProperName.exec(event.value[0].utterance),
@@ -972,6 +974,17 @@ const dmMachine = setup({
                 guard: ({ event }) => utteranceMatch(feedback["acknowledgment"], event.value[0].utterance),
                 target: "GroundedState",
               },
+
+              /* Negation detected */
+
+              {
+                guard: ({ event }) => event.value[0].utterance.toLowerCase().includes("no"),
+                target: "UnknownPerson",
+              },
+
+              {
+                target: "#DM.aux.UnknownTopic"
+              }
 
             ],
             ASR_NOINPUT: [
