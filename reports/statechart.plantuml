@@ -1,0 +1,50 @@
+@startuml
+State1 --> State4: RECOGNISED (Sp. offer)
+State1 --> State7: RECOGNISED (Sp. installment)
+State1 --> State1: RECOGNISED (Name)
+  
+state State2: **entry:** listen
+state State3
+state State5
+  
+state State4
+
+  
+state State1 {
+  state c1 <<choice>>
+
+  c1 --> AckParCR
+  c1 --> SpellingOffer
+  c1 --> SpellingInstallment
+  c1 --> AckVerb
+  c1 --> CRSpReq
+  
+  AckParCR --> State2: SPEAK_COMPLETE  
+  AckParCR: **entry:** sayOneOf(
+  AckParCR: Ack(Par.) word/word part
+  AckParCR: CR(Rep. Req.)
+  AckParCR: CR(Conf. Req.)
+  AckParCR: CR(Gen. Req.)
+  AckParCR: )
+
+  AckVerb --> State3: SPEAK_COMPLETE
+  AckVerb: **entry:** sayOneOf(
+  AckVerb: Ack(Verb.) word/word part
+  AckVerb: Ack(Cont.)
+  AckVerb: )
+
+  CRSpReq --> State5: SPEAK_COMPLETE
+  CRSpReq: **entry:** say(
+  CRSpReq: CR(Sp. Req.)
+  CRSpReq: )
+  
+  SpellingOffer: **entry:** listen
+
+  SpellingInstallment: **entry:** listen
+}
+State2 -r-> State1: RECOGNISED (C | Ack(Cont.) | Name (word/word part))  
+  
+Start --> c1: RECOGNISED (Name)
+Start: **entry:** listen
+[*] -> Start   
+@enduml
