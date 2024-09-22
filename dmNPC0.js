@@ -3,7 +3,7 @@ import { speechstate } from "speechstate";
 import { createBrowserInspector } from "@statelyai/inspect";
 import { KEY } from "./azure.js";
 import feedback from "./feedback.json";
-import sentences from "./NPC1.json";
+import NPC1 from "./NPC1.json";
 
 const inspector = createBrowserInspector();
 
@@ -29,6 +29,118 @@ const settings = {
   ttsDefaultVoice: "en-US-EmmaNeural",
   speechRecognitionEndpointId: "cfb8186f-75ed-46ae-a0d8-4d8d463f3540"//"c28746b8-2cad-48aa-ada0-7aba121e1ede"//"353f01c2-b749-463a-98e2-8ff7f0f29484"//
 };
+
+async function fetchFromChatGPT(prompt, max_tokens) {
+  const myHeaders = new Headers();
+  myHeaders.append(
+    "Authorization",
+    "Bearer <>",
+  );
+  myHeaders.append("Content-Type", "application/json");
+  const raw = JSON.stringify({
+    model: "gpt-3.5-turbo",
+    messages: [
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+    temperature: 0,
+    max_tokens: max_tokens,
+  });
+
+  const response = fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: myHeaders,
+    body: raw,
+    redirect: "follow",
+  })
+    .then((response) => response.json())
+    .then((response) => response.choices[0].message.content);
+
+  return response;
+};
+
+const classifyIntent = `
+This is a JSON object: {"intent": <intent>}. Please, classify the text according to the following 4 intents, bear in mind this is a video game setting: "information", "chitchat", "goal", "name" and "other". 
+"information" refers to items in specific rooms in the mansion or background of the characters, "chitchat" refers to multiple open topics, "goal" refers to the player wanting to enter the basement, "other" is for anything else.
+To get the intents, please, try to follow the following guidelines: 
+The intent "information" should be selected when in the text they mention they want to know about an item or a room, or about the background story of either the parents or the housekeeper. I will give you a JSON object with some of these items and background information down below.
+Please, select the intent "chitchat" when a general topic of conversation is presented. I will give you a JSON object with some chichat topics you may detect in the sentence down below.
+Please, select the intent "goal" when in the text they ask about "how can I enter the basement?", "I want to enter the basement", "open the basement", etc. or if they mention they want to talk about "pictures", mentioned having seen pictures under the bed, etc.
+Please, select the intent "other" whenever you cannot find a relation between the sentence and the keys and strings stored in the JSON objects. If you detect an item, a part of the mansion or a topic that is not in the JSON objects, please write after in the intent. See example.
+Importantly, if you detect anything that resembles a name, spelling of a name, or the like, please put the value "name" in the JSON object as you will see in the example below.
+To analyze intents, please, break down every text into sentences (separated by commas or dots), consider what every sentence says, and then give back an intent.
+
+This is the JSON object containing information on items in the mansion and about background stories: ${JSON.stringify(NPC1.information)}.
+This is the JSON object with chitchat topics: ${JSON.stringify(NPC1.chitchat)}
+
+Some examples:
+Text: "Do you know how I can open the cabinet?". {"intent": "information.mansion.dollroom"}
+Text: "What have you been doing lately?". {"intent": "chitchat.work"}
+Text: "Can you please open the basement?". {"intent": "goal"}
+Text: "Do you know anything about Bor Veshur?". {"intent": "name"}
+Text: "Do you know how I can open the safe?". {"intent": "other.safe"}
+Text: "How can I go to the roof?". {"intent": "other.roof"}
+PLEASE, ONLY REPLY WITH THE JSON OBJECT. DON'T USE QUOTES IN YOUR ANSWER. This is the text:
+`
+
+const classifyInfo = `
+This is a JSON object: {"information": <information>}. Please, detect what the player may want information for in the text that I will give you. Use the JSON object below containing information on items in the mansion and about background stories to try and find what they may be looking for.
+This is a video game setting where the user plays as the daughter of the sir of the mansion, the mistress of the house has passed away. The player is talking to the housekeeper in this scenario. 
+Bear in mind that the player may want information about different items and characters but not be quite precise about it, because of this, try detecting the topic, an object or item, of the sentence and the place. 
+
+If both the place and item can be found in the JSON object I will give you, please return a sentence that contains them.
+For example, in a sentence such as "How old are you, lady?", return: {"information" : "backgroundstory.housekeeperstory[2]"}
+
+In case there is no match, return the place and topic that you have detected in the sentence, in that order.
+For example, in a sentence where there is a topic and a place: "Do you know how I can put out the fireplace in the library?", return {"information" : "library.fireplace"}.
+For example, in the sentence where there is only a topic: "Where can I get a lighter or something similar?", return {"information" : "lighter"}.
+For example, in the sentence where there is only a place: "Do you know how I can get to the attic?", return {"information" : "attic"}.
+
+This is the JSON object containing information on items in the mansion and about background stories: ${JSON.stringify(NPC1.information)}.
+
+PLEASE, ONLY REPLY WITH THE JSON OBJECT. DON'T USE QUOTES IN YOUR ANSWER. This is the text:
+`
+
+const classifyChitchat = `
+This is a JSON object: {"chitchat": <chitchat>}. Please, detect what the player may want to chit-chat about in the text that I will give you. Use the JSON object below containing topics of conversation to try and find what they may be wanting to talk about.
+This is a video game setting where the user plays as the daughter of the sir of the mansion, the mistress of the house has passed away. The player is talking to the housekeeper in this scenario. 
+Bear in mind that the player may be a bit vague about what they want to talk about, because of this, try detecting a topic that is close to or approximates the ones in the JSON object I will give you. 
+
+If the topic is similar to the ones found in the JSON object, please return an appropriate sentence.
+For example, in the player says: "So, how's your work going?", return: {"chitchat" : "work[1]"}.
+For example, in a sentence such as: "Are you happy working here?", return {"chitchat": "lifephilosophy[1]"}.
+
+In case there is no approximate match, return the topic that you have detected in the sentence.
+For example, in a sentence such as: "What do you think about cars?", return {"chitchat": "cars"}.
+
+This is the JSON object containing chitchat topics: ${JSON.stringify(NPC1.chitchat)}.
+
+PLEASE, ONLY REPLY WITH THE JSON OBJECT. DON'T USE QUOTES IN YOUR ANSWER. This is the text:
+`
+
+const classifyGoal = `
+This is a JSON object: {"goal": <goal>}. Please, detect what the player may want to talk about in the text that I will give you. The JSON object I will give you below will help you recognize if the user is talking about either (1) entering the basement or (2) discovering some pictures.
+In this video game setting the user plays as the daughter of the sir of the mansion, the mistress of the house has passed away. The player is talking to the housekeeper in this scenario. 
+What is important in the text you will receive is that you also detect if the player is referring to something that seems like a proper name.
+
+If you detect the user is talking about either entering the basement or about the pictures, please return an appropriate sentence.
+For example, if the player talks about the basement: "Um, I would like to know what's up with the basement", return: {"goal" : "basement[2]"}.
+For example, if the player talks about the pictures: "In your room there are some weird pictures, what is that?", return: {"goal" : "pictures[1]"}.
+
+Importantly, in the case that you also detect the player is trying to tell something like a proper name or starts spelling a name, please put said name or spelling in the JSON object.
+For example, if you detect something that seems like a name: "I found pictures of a guy called Jack N dorn in your room", return {"goal" : "Jack N dorn"}.
+For example, if you detect spelling in capital letters: "You spell it as EGONNEMEV", return {"goal" : "EGONNEMEV"}.
+For example, if you detect both: "The name is Egon Nemeith, EGONNEMEV", return {"goal" : "Egon Nemeith, EGONNEMEV"}.
+
+This is the JSON object containing chitchat topics: ${JSON.stringify(NPC1.goal)}.
+
+PLEASE, ONLY REPLY WITH THE JSON OBJECT. DON'T USE QUOTES IN YOUR ANSWER. This is the text:
+`
+
+
+
 
 const prompts = ["What did you say child? My ears are no good", "Repeat that Miss", "What did you say?.", "I can't hear for the love of me"]
 
@@ -133,6 +245,7 @@ const dmMachine = setup({
     counter: " ",
     state2counter: " ",
     propernamefailure: 0, // this could be used as a context where strings are compared somehow
+    other: " ",
   },
   actions: {
     // After defining these Xstate visualizer gets buggy.
@@ -157,6 +270,8 @@ const dmMachine = setup({
   initial: "main",
 
   states: {
+
+    /* Auxiliary TIMEOUT and Unknown Topic responses, working with a History state. */
     aux: {
       initial:"NoHearing",
       states: {
@@ -167,14 +282,16 @@ const dmMachine = setup({
           },
           on: { SPEAK_COMPLETE: "#DM.main.hist" }
         },
-        UnknownTopic: {
+
+        UnknownOther: {
           entry: {
             type: "say",
-            params: `Excuse me, but I do not know what you talk about Young Miss `
+            params: ({context})=> `Excuse me, but I do not know what ${context.other} you are referring to`
           },
           on: { SPEAK_COMPLETE: "#DM.main.hist" }
         },
-        NoUnderstanding: {
+        
+        UnknownTopic: {
           entry: {
             type: "say",
             params: `${randomRepeat(feedback["npc-clarification-request"]["general-request-2"])}`
@@ -204,13 +321,15 @@ const dmMachine = setup({
           on: { CLICK: "Greeting" },
         },
 
+        /* Main States */
+
         Greeting: {
           entry: {
             type: "say",
             params: `Miss, what are you doing up so late?`,
           },
           on:
-            { SPEAK_COMPLETE: "State1"}
+            { SPEAK_COMPLETE: "IntentionCheck"} //State1 to go to grounding module
         },
 
         /* Detecting intention */
@@ -222,17 +341,189 @@ const dmMachine = setup({
           on: {
             RECOGNISED: [
               {
-                guard: ({ event }) => event.value[0].utterance.toLowerCase().includes("open the basement"),
-                target: "Answer1",
-              },
-              {
-                guard: ({ event }) => event.value[0].utterance.toLowerCase().includes("how are you"),
-                target: "Answer2",
+                target: "GPTintent",
+                actions: assign({
+                  lastResult: ({ event }) => event.value[0].utterance
+                })
               },
             ],
             ASR_NOINPUT: "CantHear",
           }
         },
+
+        GPTintent: {
+          invoke: {
+            src: fromPromise(async ({ input }) => {
+              const data = await fetchFromChatGPT(classifyIntent + input.lastResult, 1000);
+              return data;
+            }),
+            input: ({ context }) => ({
+              lastResult: context.lastResult, // To pass object with utterance and CS, remove ".utterance"
+            }),
+            onDone: [
+              {
+                guard: ({ event }) => JSON.parse(event.output).intent === "information",
+                target: "GPTinformation",
+              },
+              {
+                guard: ({ event }) => JSON.parse(event.output).intent === "chitchat",
+                target: "GPTchitchat",
+              },
+              {
+                guard: ({ event }) => JSON.parse(event.output).intent === "goal",
+                target: "GPTgoal",
+              },
+              {
+                guard: ({ event }) => JSON.parse(event.output).intent === "other",
+                target: "GPTother",
+              },
+              {
+                guard: ({ event }) => JSON.stringify(event.output).includes("information."),
+                target: "SpeakGPTinformation",
+                actions: assign({
+                  gptoutput: ({ event }) => "NPC1." + JSON.parse(event.output).intent
+                })
+              },
+              {
+                guard: ({ event }) => JSON.stringify(event.output).includes("chitchat."),
+                target: "SpeakGPTchitchat",
+                actions: assign({
+                  gptoutput: ({ event }) => "NPC1." + JSON.parse(event.output).intent
+                })
+              },
+              {
+                guard: ({ event }) => JSON.stringify(event.output).includes("goal."),
+                target: "SpeakGPTgoal",
+                actions: assign({
+                  gptoutput: ({ event }) => "NPC1." + JSON.parse(event.output).intent
+                })
+              },
+              {
+                guard: ({ event }) => JSON.stringify(event.output).includes("other."),
+                target: "SpeakGPTother",
+                actions: assign({
+                  gptoutput: ({ event }) => "NPC1." + JSON.parse(event.output).intent
+                })
+              },
+              {
+                guard: ({ event }) => JSON.parse(event.output).intent === "name",
+                target: "State1",
+                actions: assign({
+                  namesentence: ({ context }) => context.lastResult
+                })
+              },
+
+            ],
+          },
+        },
+
+        GPTinformation: {
+          invoke: {
+            src: fromPromise(async ({ input }) => {
+              const data = await fetchFromChatGPT(classifyInfo + input.lastResult, 1000);
+              return data;
+            }),
+            input: ({ context }) => ({
+              lastResult: context.lastResult,  // To pass object with Utterance and CS, remove ".utterance"
+            }),
+            onDone: [
+              {
+                //guard: ({ event }) => JSON.parse(event.output).intent.includes("information"),
+                target: "SpeakGPTinformation",
+              },
+            ],
+          },
+        },
+
+        GPTchitchat: {
+          invoke: {
+            src: fromPromise(async ({ input }) => {
+              const data = await fetchFromChatGPT(classifyInfo + input.lastResult, 1000);
+              return data;
+            }),
+            input: ({ context }) => ({
+              lastResult: context.lastResult,  // To pass object with Utterance and CS, remove ".utterance"
+            }),
+            onDone: [
+              {
+                //guard: ({ event }) => JSON.parse(event.output).intent.includes("information"),
+                target: "SpeakGPTchitchat",
+              },
+            ],
+          },
+        },
+
+        GPTgoal: {
+          invoke: {
+            src: fromPromise(async ({ input }) => {
+              const data = await fetchFromChatGPT(classifyInfo + input.lastResult, 1000);
+              return data;
+            }),
+            input: ({ context }) => ({
+              lastResult: context.lastResult,  // To pass object with Utterance and CS, remove ".utterance"
+            }),
+            onDone: [
+              {
+                //guard: ({ event }) => JSON.parse(event.output).intent.includes("information"),
+                target: "SpeakGPTgoal",
+              },
+            ],
+          },
+        },
+    
+        GPTother: {
+          invoke: {
+            src: fromPromise(async ({ input }) => {
+              const data = await fetchFromChatGPT(classifyInfo + input.lastResult, 1000);
+              return data;
+            }),
+            input: ({ context }) => ({
+              lastResult: context.lastResult, // To pass object with Utterance and CS, remove ".utterance"
+            }),
+            onDone: [
+              {
+                //guard: ({ event }) => JSON.parse(event.output).intent.includes("information"),
+                target: "SpeakGPTother",
+              },
+            ],
+          },
+        },
+
+        SpeakGPTinformation :{
+          entry: {
+            type: "say",
+            params: ({ context }) => `${eval(context.gptoutput)}`
+          },
+          on: { SPEAK_COMPLETE: "Done" }
+        },
+
+        SpeakGPTchitchat :{
+          entry: {
+            type: "say",
+            params: ({ context }) => `${eval(context.gptoutput)}`
+          },
+          on: { SPEAK_COMPLETE: "Done" }
+        },
+
+        SpeakGPTgoal :{
+          entry: {
+            type: "say",
+            params: ({ context }) => `${eval(context.gptoutput)}`
+          },
+          on: { SPEAK_COMPLETE: "Done" }
+        },
+
+        SpeakGPTother :{
+          entry: {
+            type: "say",
+            params: ({ context }) => `${eval(context.gptoutput)}`
+          },
+          on: { SPEAK_COMPLETE: "Done" }
+        },
+
+
+
+        
 
         Answer1: {
           entry: {
@@ -269,6 +560,8 @@ const dmMachine = setup({
             { SPEAK_COMPLETE: "IntentionCheck" },
         },
 
+        /* After grounding and agreeing on not understanding the name, we wait for the speaker (user) to cancel. */
+
         UnknownPerson: {
           entry: {
             type: "say",
@@ -277,24 +570,8 @@ const dmMachine = setup({
           on: { SPEAK_COMPLETE: "State1" }
         },
 
-        UnknownTopic: {
-          entry: {
-            type: "say",
-            params: `Excuse me, but I do not know what you talk about Young Miss `
-          },
-          on: { SPEAK_COMPLETE: "State1" }
-        },
-
-        // NoHearing : {
-        //   entry: {
-        //     type: "say",
-        //     params: `${randomRepeat(feedback["clarification-request"]["general-request"])}`
-        //   },
-        //   on: { SPEAK_COMPLETE: "State1" }
-        // },
 
         /* The speaker utters a Name and the listener detects it, triggering grounding mode for the Name in question.
-        The listener 
         Susequent user interactions are not allowed in this implementation, if the speaker (user) elicits an acknowledgment 
         after a name, and the name is correct, the listener (machine) will interpret the name. 
         This means that the state S to 1 (name) doesn't get the intermediate state 3 (acknowledgment by speaker) and then 
@@ -302,7 +579,7 @@ const dmMachine = setup({
         */
 
         /* STATE 1
-         Extremely naive Name + Surname detection, look at object reProperName (regex).
+         Base version: Extremely naive Name + Surname detection, look at object reProperName (regex).
          It detects two words starting with caps preceeded by spaces.
      
          WARNING: TIMEOUT MAY INTERFERE HERE AND NOT CATCH THE SENTENCE for some reason in conditions */
@@ -324,7 +601,7 @@ const dmMachine = setup({
               If Confidence Score is LOW, go to State 4 to react to it, and then go to State5 for spelling or State8 for acceptance.
     
               Accepting represents lack of understanding of the name, refusal represents that the name has been understood.
-              That is represented by confirming that the name matches with the randomName generated ✅ */
+              That is represented by confirming that the name matches with the randomName generated */
 
               {
                 guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) === randomName && utteranceMatch(feedback["clarification-request"]["spelling-offer"], event.value[0].utterance) && (checkScore(event.value[0].confidence) === "VERYGOOD" || checkScore(event.value[0].confidence) === "GOOD" || checkScore(event.value[0].confidence) === "OK" ),
@@ -341,7 +618,7 @@ const dmMachine = setup({
               This represents that the system is not "sure" that it is the name. 
               At the same time, it represents that the user needs to speak more clearly or in better environmental conditions. 
     
-              Unlikely scenario if the environmental conditions are good. ✅ */
+              Unlikely scenario if the environmental conditions are good. */
 
               {
                 guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) === randomName && utteranceMatch(feedback["clarification-request"]["spelling-offer"], event.value[0].utterance) && checkScore(event.value[0].confidence) === "LOW",
@@ -365,17 +642,6 @@ const dmMachine = setup({
                 target: "State4",
               },
 
-              /* Name + spelling offer.
-              The spelling request is rejected because the name does not match and the confidence is OK or LOW */
-              // {
-              //   guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) !== randomName && utteranceMatch(feedback["npc-clarification-request"]["spelling-offer"], event.value[0].utterance),
-              //   actions: assign({
-              //     spellreaction: "Okay",
-              //     propername: ({ event }) => reProperName.exec(event.value[0].utterance)[0].substring(1)
-              //   }),
-              //   target: "State4",
-              // },
-
               /* TO STATE 3
     
               Name detected. No conflict (the name matches).
@@ -396,7 +662,8 @@ const dmMachine = setup({
               },
 
               /* In case the name matches but the confidence is not so good, different type of feedback is given.
-              Here an acknowledgment is expected in State 2 */
+              Here an acknowledgment is expected in State 2.
+              This should be State 3 instead, but we have set acknowledgments when in State 3 */
 
               {
                 guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) === randomName && checkScore(event.value[0].confidence) === "LOW" ,
@@ -467,7 +734,7 @@ const dmMachine = setup({
                 guard: ({ event, context }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) !== randomName && checkScore(event.value[0].confidence) === "LOW" && context.random === 1,
                 actions: [
                   assign({
-                    //change name to "repeat-request" if time permits lol
+                    //change name to "repeat-request" if time permits, otherwise, paraphrase is synonym for reaction.
                     paraphrase: randomRepeat(feedback["npc-clarification-request"]["repeat-request"]),
                     propername: ({ event }) => reProperName.exec(event.value[0].utterance)[0].substring(1)
                   }),
@@ -514,7 +781,7 @@ const dmMachine = setup({
 
               // perception level error
               {
-                target: "UnknownTopic",
+                target: "#DM.aux.UnknownTopic",
 
               }
             ],
@@ -530,16 +797,16 @@ const dmMachine = setup({
         Here we acknowledge that some name has been heard for State1.
         If the name equals the answer, then it should proceed to State3. */
 
-        FeedbackState1: {
-          // We need this state because we cannot do listen + listen, and then we need conditions in State 1 regarding previous 
-          // misunderstood name: S1 "Etel Zimmer?"-> S2 No it's actually "Aethel Zimmer"-> condition for checking propername detected here
-          entry: {
-            type: "say",
-            params: ({ context }) => `hmm...`
-          },
-          on:
-            { SPEAK_COMPLETE: "State1" },
-        },
+        // FeedbackState1: {
+        //   // We need this state because we cannot do listen + listen, and then we need conditions in State 1 regarding previous 
+        //   // misunderstood name: S1 "Etel Zimmer?"-> S2 No it's actually "Aethel Zimmer"-> condition for checking propername detected here
+        //   entry: {
+        //     type: "say",
+        //     params: ({ context }) => `hmm...`
+        //   },
+        //   on:
+        //     { SPEAK_COMPLETE: "State1" },
+        // },
 
         /* Say feedback belonging to State 2 according to Confidence Scores.
         State 1 is partially adapted here. */
@@ -553,10 +820,14 @@ const dmMachine = setup({
             { SPEAK_COMPLETE: "ListenState2" },
         },
 
-        /* TO STATES 1 & 3
+        /* TO STATES 2, 3 & 5
+
+        Recursion to State 1 not handled here, instead listening in State 2, preserving the logic explained in
+        Bondarenko (2019, p.23).
     
         A correction of the name is expected, whether it matches or not is checked in State3.
         
+        Not in this basic version: 
         Recognizing a clarification sentence is more elaborate than just selecting specific content, we need sophisticated NLU or phonetics.
         Aproximate understanding such as (Randaunphel) -> run down hill, also needs sophisticated NLU. 
         Another way one could do this is by detecting a word and blindly expecting it is a proper noun repair... */
@@ -686,7 +957,6 @@ const dmMachine = setup({
             params: `${randomRepeat(feedback["npc-clarification-request"]["spelling-request"])}`
           },
           on:
-            // or ListenState5? ListenState7?
             { SPEAK_COMPLETE: "ListenState5" },
         },
 
@@ -784,10 +1054,9 @@ const dmMachine = setup({
         },
 
         /* TO STATE 8
-        The agent is going to repeat the spelling that it has heard or acknowledge it depending on Confidence Score
-        It won't paraphrase it. 
+        The agent is going to repeat the spelling that it has heard or acknowledge it depending on Confidence Score, it won't paraphrase it. 
     
-        >>We give the opportunity first to the speaker to continue spelling, if not, the machine continues
+        We give the opportunity first to the speaker to continue spelling, if not, the machine continues
         Since listen after listen can't be done, we first add a silence. --> This could not be done, so timeout. */
 
         State7: {
@@ -804,10 +1073,6 @@ const dmMachine = setup({
           },
           on: {
             RECOGNISED: [
-
-              /*TO STATE 5: In timeout
-              If the name doesn't match with the spelling given, we wait for timeout to send a spelling request again */
-
 
               /* TO STATE 8
               Name matches, good confidence.
@@ -842,8 +1107,8 @@ const dmMachine = setup({
                 target: "State8"
               },
 
-              /* TO STATE : "I don't know what you are talking about"
-              Name doesn't match, but the confidence is very good. Grounded but incorrect. ✦ Explain logic for this ✦ */
+              /* TO STATE : "I don't know WHO you are talking about"
+              Name doesn't match, but the confidence is very good. Grounded but incorrect. ✦ Logic for this: if the agent is sure about the spelling, they can recognize they don't know the person. ✦ */
 
               {
                 guard: ({ event, context }) => spellingMatch(reSpell.exec(event.value[0].utterance), randomName) !== randomName && (checkScore(event.value[0].confidence) === "VERYGOOD" || checkScore(event.value[0].confidence) === "GOOD" || checkScore(event.value[0].confidence) === "OK"),
@@ -883,10 +1148,8 @@ const dmMachine = setup({
             ],
             ASR_NOINPUT: [
 
-              //if nothing is recognized
-
               /* TO GROUNDED STATE
-              First it should be checked whether the spelling matches or not from previous state  */
+              First it should be checked whether the spelling matches or not from previous state.  */
 
               {
                 guard: ({ context }) => spellingMatch(context.spelling, randomName),
@@ -898,28 +1161,6 @@ const dmMachine = setup({
               { 
                 target:"#DM.aux.NoHearing",
               }
-
-
-              //{
-              // The confidence here will determine the answer in State 8
-              // If the confidence is very good, an acknowledgment is given and we go directly to grounded state
-              // Since we are ignoring the name and focusing on spelling, word-part is not taken.
-              //guard: ({ context }) => checkScore(context.confidence) === "VERYGOOD",
-              // actions: assign({
-              //   //This is the reaction, probably should change the name in State3 for "paraphrase" to "reaction" for more clarity
-              //   reaction: randomRepeat(feedback["acknowledgment"]),
-              // }),
-              // target: "State8"
-              //},
-              // {
-              // If the confidence is good or ok, we give verbatim repetition of the spelling
-              // guard: ({ context }) => checkScore(context.confidence) === "GOOD" || checkScore(context.confidence) === "OK",
-              // actions: assign({
-              //   //This is the reaction, probably should change the name for "paraphrase" as well to "reaction"
-              //   reaction: ({ context }) => context.spelling,
-              // }),
-              // target: "State8"
-              // },
 
             ]
           }
@@ -1065,7 +1306,8 @@ const dmMachine = setup({
             ],
             ASR_NOINPUT: [
 
-              /* If name still doesn't match after timeout, spelling request is made in State5. */
+              /* If name still doesn't match after timeout, spelling request is made in State5. 
+              An assumtion that the user grows tired of repeating is made here. */
 
               {
                 guard: ({ context }) => context.propername !== randomName,
@@ -1089,7 +1331,7 @@ const dmMachine = setup({
         GroundedState: {
           entry: {
             type: "say",
-            params: ({ context }) => `${context.propername}, huh? <emphasis level='strong'> My, my. Quite the nosy child are you... </emphasis>`
+            params: ({ context }) => `${context.propername}, huh? <emphasis level='strong'> My, my. Quite the nosy child are you... </emphasis> You want to enter the basement? Go ahead, brat.`
           },
           on:
             { SPEAK_COMPLETE: "IntentionCheck" }
@@ -1139,7 +1381,7 @@ const dmActor = createActor(dmMachine, {
 
 export function setupButton(element) {
   element.addEventListener("click", () => {
-    dmActor.send({ type: "CLICK" }); //dmActor2.send({ type: "CLICK" }), 
+    dmActor.send({ type: "CLICK" }); 
   });
 
   dmActor.getSnapshot().context.ssRef.subscribe((snapshot) => {

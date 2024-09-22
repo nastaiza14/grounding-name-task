@@ -50,9 +50,9 @@
 
         "general-request": ["What was that Miss?", "I couldn't hear that, Child", "I couldn't hear that Young Miss", "Sorry what was that Miss?", "What did you say again Miss?", "What did you say, Child?"],
 
-        "spelling-request": ["Could you tell me how you write that Miss?", "The name is composed by which letters?", "Out of curiosity, how do you spell that Young Miss?", "Could you say that letter by letter?", "I am curious, how do you write that Young Miss?"],
+        "spelling-request": ["Could you tell me how you write that Miss?", "The name is composed by which letters, Miss?", "Out of curiosity, how do you spell that Young Miss?", "Could you say that letter by letter?", "I am curious, how do you write that Young Miss?"],
 
-        "general-request-2": ["Excuse me?", "What was that, Miss?", "What was that, child?", "I beg your pardon?"]
+        "general-request-2": ["Excuse me?", "What was that, Miss?", "What was that, child?", "I beg your pardon?", "What did you say, Child?"]
 
     }
 
