@@ -67,9 +67,9 @@ This is a JSON object: {"intent": <intent>}. Please, classify the text according
 To get the intents, please, try to follow the following guidelines: 
 The intent "information" should be selected when in the text they mention they want to know about an item or a room, or about the background story of either the parents or the housekeeper. I will give you a JSON object with some of these items and background information down below.
 Please, select the intent "chitchat" when a general topic of conversation is presented. I will give you a JSON object with some chichat topics you may detect in the sentence down below.
-Please, select the intent "goal" when in the text they ask about "how can I enter the basement?", "I want to enter the basement", "open the basement", etc. or if they mention they want to talk about "pictures", mentioned having seen pictures under the bed, etc.
+Please, select the intent "goal" when in the text they ask about "how can I enter the basement?", "I want to enter the basement", "open the basement", etc. or if they mention they want to talk about "pictures", or pictures about a patient, or mention having seen pictures under the bed, etc.
 Please, select the intent "other" whenever you cannot find a relation between the sentence and the keys and strings stored in the JSON objects. If you detect an item, a part of the mansion or a topic that is not in the JSON objects, please write after in the intent. See example.
-Importantly, if you detect anything that resembles a name, spelling of a name, or the like, please put the value "name" in the JSON object as you will see in the example below.
+Importantly, if you detect a proper name in any of the sentences, please put instead the value "name" in the JSON object as you will see in the example below.
 To analyze intents, please, break down every text into sentences (separated by commas or dots), consider what every sentence says, and then give back an intent.
 
 This is the JSON object containing information on items in the mansion and about background stories: ${JSON.stringify(NPC1.information)}.
@@ -139,7 +139,10 @@ This is the JSON object containing chitchat topics: ${JSON.stringify(NPC1.goal)}
 PLEASE, ONLY REPLY WITH THE JSON OBJECT. DON'T USE QUOTES IN YOUR ANSWER. This is the text:
 `
 
+const classifyName = `
+This is a JSON object: {"name": <name>, "spelling": <spelling>}.  Please, if the player may be trying to conver a proper name 
 
+`
 
 
 const prompts = ["What did you say child? My ears are no good", "Repeat that Miss", "What did you say?.", "I can't hear for the love of me"]
@@ -318,7 +321,7 @@ const dmMachine = setup({
         },
 
         WaitToStart: {
-          on: { CLICK: "Greeting" },
+          on: { CLICK: "Greeting" }, //Greeting
         },
 
         /* Main States */
@@ -329,7 +332,7 @@ const dmMachine = setup({
             params: `Miss, what are you doing up so late?`,
           },
           on:
-            { SPEAK_COMPLETE: "IntentionCheck"} //State1 to go to grounding module
+            { SPEAK_COMPLETE: "State1"} //State1 to go to grounding module, IntentionCheck to use the full loop
         },
 
         /* Detecting intention */
@@ -489,6 +492,24 @@ const dmMachine = setup({
           },
         },
 
+        GPTname: {
+          invoke: {
+            src: fromPromise(async ({ input }) => {
+              const data = await fetchFromChatGPT(classifyInfo + input.lastResult, 1000);
+              return data;
+            }),
+            input: ({ context }) => ({
+              lastResult: context.lastResult, // To pass object with Utterance and CS, remove ".utterance"
+            }),
+            onDone: [
+              {
+                //guard: ({ event }) => JSON.parse(event.output).intent.includes("information"),
+                target: "SpeakGPTother",
+              },
+            ],
+          },
+        },
+
         SpeakGPTinformation :{
           entry: {
             type: "say",
@@ -583,6 +604,7 @@ const dmMachine = setup({
          It detects two words starting with caps preceeded by spaces.
      
          WARNING: TIMEOUT MAY INTERFERE HERE AND NOT CATCH THE SENTENCE for some reason in conditions */
+
 
         State1: {
           entry: {
@@ -1011,9 +1033,10 @@ const dmMachine = setup({
               {
                 target: "#DM.aux.UnknownTopic"
               }
-            ]
-          },
+            ],
+          
           ASR_NOINPUT: "#DM.aux.NoHearing",
+          },
         },
 
         /* TO STATE 7
@@ -1048,9 +1071,10 @@ const dmMachine = setup({
               {
                 target: "#DM.aux.UnknownTopic"
               }
-            ]
-          },
+            ],
+          
           ASR_NOINPUT: "#DM.aux.NoHearing",
+          },
         },
 
         /* TO STATE 8
@@ -1153,7 +1177,7 @@ const dmMachine = setup({
 
               {
                 guard: ({ context }) => spellingMatch(context.spelling, randomName),
-                target: "GroundedState"
+                target: "GroundedState",
               },
               // {
               //   target: "UnknownPerson"  //change this, we give them another try
@@ -1331,7 +1355,7 @@ const dmMachine = setup({
         GroundedState: {
           entry: {
             type: "say",
-            params: ({ context }) => `${context.propername}, huh? <emphasis level='strong'> My, my. Quite the nosy child are you... </emphasis> You want to enter the basement? Go ahead, brat.`
+            params: `That patient, huh?  My, my. Quite the nosy child are you...  You want to enter the basement? Go ahead, brat!`
           },
           on:
             { SPEAK_COMPLETE: "IntentionCheck" }
