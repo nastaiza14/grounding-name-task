@@ -297,7 +297,7 @@ const dmMachine = setup({
         UnknownTopic: {
           entry: {
             type: "say",
-            params: `${randomRepeat(feedback["npc-clarification-request"]["general-request-2"])}`
+            params: `${randomRepeat(feedback["npc-clarification-request"]["general-request-3"])}`
           },
           on: { SPEAK_COMPLETE: "#DM.main.hist" }
         },

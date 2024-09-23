@@ -52,7 +52,9 @@
 
         "spelling-request": ["Could you tell me how you write that Miss?", "The name is composed by which letters, Miss?", "Out of curiosity, how do you spell that Young Miss?", "Could you say that letter by letter?", "I am curious, how do you write that Young Miss?"],
 
-        "general-request-2": ["Excuse me, Miss?", "What do you mean, Miss?", "I can't cmprehend, Child", "I beg your pardon, Miss?"]
+        "general-request-2": ["Excuse me, Miss?", "What are you referring to, Miss?", "I can't cmprehend, Child", "I beg your pardon, Miss?"],
+
+        "general-request-3": ["What are you speaking about Young Miss?", "What is it you are referring to Young Miss?" , "I do not know what you speak about Young Miss", "I do not know what you talk about Young Miss", "I do not understand what you are referring to, Miss"]
 
     }
 
