@@ -332,7 +332,20 @@ const dmMachine = setup({
             params: `Miss, what are you doing up so late?`,
           },
           on:
-            { SPEAK_COMPLETE: "State1"} //State1 to go to grounding module, IntentionCheck to use the full loop
+            { SPEAK_COMPLETE: 
+
+               {
+                
+                  target: "State1",
+                  actions: assign({
+                    random: randomNum(2),
+                  })
+                
+
+               }
+            } 
+            
+            //State1 to go to grounding module, IntentionCheck to use the full loop
         },
 
         /* Detecting intention */
@@ -656,7 +669,7 @@ const dmMachine = setup({
               */
 
               {
-                guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) !== randomName && utteranceMatch(feedback["clarification-request"]["spelling-offer"], event.value[0].utterance),
+                guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reProperName.exec(event.value[0].utterance)[0].substring(1) !== randomName && utteranceMatch(feedback["clarification-request"]["spelling-offer"], event.value[0].utterance) && (checkScore(event.value[0].confidence) === "VERYGOOD" || checkScore(event.value[0].confidence) === "GOOD"),
                 actions: assign({
                   spellreaction: "Okay",
                   propername: ({ event }) => reProperName.exec(event.value[0].utterance)[0].substring(1),
@@ -696,6 +709,23 @@ const dmMachine = setup({
                   }),
                 ],
                 target: "State2",
+              },
+
+              /* To State 7 
+              If Name is detected and spelling is detected too.
+              Spelling determines the more accurate understanding, whereas the name detection just serves as an indicator of grounding mode.
+    
+              Similarly to transitions to State 3, the Confidence Score will determine the type of reaction.
+              This is determined in State 7.
+              Determining if the name matches also happens in State7. */
+
+              {
+                guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reSpell.exec(event.value[0].utterance),
+                actions: assign({
+                  spelling: ({ event }) => reSpell.exec(event.value[0].utterance),
+                  propername: ({ event }) => reProperName.exec(event.value[0].utterance)[0].substring(1)
+                }),
+                target: "State7"
               },
 
               /* TO STATE 2 
@@ -773,22 +803,7 @@ const dmMachine = setup({
                 target: "State5"
               },
 
-              /* To State 7 
-              If Name is detected and spelling is detected too.
-              Spelling determines the more accurate understanding, whereas the name detection just serves as an indicator of grounding mode.
-    
-              Similarly to transitions to State 3, the Confidence Score will determine the type of reaction.
-              This is determined in State 7.
-              Determining if the name matches also happens in State7. */
-
-              {
-                guard: ({ event }) => reProperName.exec(event.value[0].utterance) && reSpell.exec(event.value[0].utterance),
-                actions: assign({
-                  spelling: ({ event }) => reSpell.exec(event.value[0].utterance),
-                  propername: ({ event }) => reProperName.exec(event.value[0].utterance)[0].substring(1)
-                }),
-                target: "State7"
-              },
+              
 
               /* TO STATE 7
               Only detecting spelling. */
@@ -1179,9 +1194,9 @@ const dmMachine = setup({
                 guard: ({ context }) => spellingMatch(context.spelling, randomName),
                 target: "GroundedState",
               },
-              // {
-              //   target: "UnknownPerson"  //change this, we give them another try
-              // }
+              {
+                target: "UnknownPerson",  //change this, we give them another try-> actually, no
+              },
               { 
                 target:"#DM.aux.NoHearing",
               }
@@ -1236,7 +1251,7 @@ const dmMachine = setup({
               /* Acknowledgment detected */
 
               {
-                guard: ({ event }) => utteranceMatch(feedback["acknowledgment"], event.value[0].utterance),
+                guard: ({ event }) => utteranceMatch(feedback["acknowledgment"], event.value[0].utterance.toLowerCase()),
                 target: "GroundedState",
               },
 
@@ -1327,6 +1342,9 @@ const dmMachine = setup({
                 }),
                 target: "State7"
               },
+              {
+                target: "#DM.aux.UnknownTopic",
+              }
             ],
             ASR_NOINPUT: [
 
@@ -1355,7 +1373,7 @@ const dmMachine = setup({
         GroundedState: {
           entry: {
             type: "say",
-            params: `That patient, huh?  My, my. Quite the nosy child are you...  You want to enter the basement? Go ahead, brat!`
+            params: `${randomName}, huh?  My, my. Quite the nosy child are you...  You want to enter the basement? Go ahead, brat!`
           },
           on:
             { SPEAK_COMPLETE: "IntentionCheck" }
@@ -1422,9 +1440,10 @@ function getContextMessage(message) {
 
 
 dmActor.subscribe((state) => {
+  console.log(state.context.random);
   console.log(state);
-  const message = state.context.message;
-  getContextMessage(message)
+  //const message = state.context.message;
+  //getContextMessage(message)
   //console.log(chatContext.chatHistory.toString().replaceAll(",|", "\n"))
 });
 
